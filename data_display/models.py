@@ -13,6 +13,8 @@ class Students(models.Model):
     interview_offer = models.BooleanField(null=True, default=None)
     project_name = models.CharField(max_length=200)
 
+    def __str__(self):
+        return self.name + '-' + self.student_id + '-' + self.discipline + '-' + self.year + '-' + self.interview_offer + '-' + self.project_name + '-' + self.email + '-' + self.phone
 
 class Teams(models.Model):
     team_name = models.CharField(max_length=200)

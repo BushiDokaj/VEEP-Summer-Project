@@ -2,7 +2,12 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.contrib.staticfiles import finders
 from data_display.models import Students, Teams, Projects, NotForProfits
+<<<<<<< Updated upstream
 from data_display.utils import string_display
+=======
+from data_display.utils import string_display, dummy_data
+from data_display.filters import StudentFilter, TeamFilter, ProjectFilter, NotForProfitFilter
+>>>>>>> Stashed changes
 
 # TODO: There should be a native app context that Django offers. Store everything we store here there instead.
 app_context = {'last_table': "", 'pagination_width': 2, 'last_data': [], 'last_headers': [], 'last_sort': '',
@@ -97,3 +102,7 @@ def toggle_sort(sort_by, context):
         context['last_sort'] = asc_sort
         context['ui_obj']['asc'] = sort_by
         return asc_sort
+
+def get_context_data(input):
+    return Students.objects.filter(input), Teams.objects.filter(input), Projects.objects.filter(input), NotForProfits.objects.filter(input)
+
