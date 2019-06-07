@@ -2,12 +2,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.contrib.staticfiles import finders
 from data_display.models import Students, Teams, Projects, NotForProfits
-<<<<<<< Updated upstream
-from data_display.utils import string_display
-=======
 from data_display.utils import string_display, dummy_data
-from data_display.filters import StudentFilter, TeamFilter, ProjectFilter, NotForProfitFilter
->>>>>>> Stashed changes
+from data_display.forms import QueryTable, SettingsForm
 
 # TODO: There should be a native app context that Django offers. Store everything we store here there instead.
 app_context = {'last_table': "", 'pagination_width': 2, 'last_data': [], 'last_headers': [], 'last_sort': '',
@@ -24,14 +20,23 @@ def database_start_page(request):
     # Check for all the query parameters
     sort_by = request.GET.get('sort')
     page_number = request.GET.get('page')
-    table = request.GET.get('table') or 'Students'
+    #table = request.GET.get('table') or 'Students'
+    table_choice='Students'
+    if request.method == "GET":
+        form = QueryTable(request.GET)
+        if form.is_valid():
+            table_choice = form.cleaned_data['table_choice']
+            filter_table = form.cleaned_data['filter_table']
+    else:
+        form = QueryTable()
+        
 
     if sort_by:
         sort_by = toggle_sort(sort_by, app_context)
-        data, table_headers = get_objects_by_table_and_sort(table, sort_by)
+        data, table_headers = get_objects_by_table_and_sort(table_choice, sort_by)
         app_context['last_data'], app_context['last_headers'] = data, table_headers
     elif not page_number or not app_context['last_data']:
-        data, table_headers = get_objects_by_table(table)
+        data, table_headers = get_objects_by_table(table_choice)
         page_number = 1
         app_context['last_data'], app_context['last_headers'] = data, table_headers
     else:
@@ -47,7 +52,7 @@ def database_start_page(request):
     pages = get_pagination_ranges(paginator, int(page_number))
     return render(
         request, 'data_display/database_start_page.html',
-        {'data': subset_data, 'table_headers': table_headers, 'pages': pages, 'ui': app_context['ui_obj']}
+        {'data': subset_data, 'table_headers': table_headers, 'pages': pages, 'ui': app_context['ui_obj'], 'form':form}
     )
 
 

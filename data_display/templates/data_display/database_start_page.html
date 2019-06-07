@@ -20,16 +20,8 @@
     </div>
 </div>
 <div>
-    <form>
-        <select class = "menu" id = "tables" name = 'tables'>
-            <option value = "Students">Students</option>
-            <option value = "Teams">Teams</option>
-            <option value = "Projects">Projects</option>
-            <option value = "Not For Profits">Not For Profits</option>
-        </select>
-
-
-        <input type = "text" placeholder= "Filter..." id = "filter" name = "filter" >
+    <form action='/data_display/' method="GET">
+        {{ form }}
         <input type = "submit">
     </form>
 </div>
