@@ -2,7 +2,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.contrib.staticfiles import finders
 from data_display.models import Students, Teams, Projects, NotForProfits
-from data_display.utils import string_display, dummy_data
+from data_display.utils import string_display
 from data_display.forms import QueryTable, SettingsForm
 
 # TODO: There should be a native app context that Django offers. Store everything we store here there instead.
@@ -20,20 +20,30 @@ def database_start_page(request):
     # Check for all the query parameters
     sort_by = request.GET.get('sort')
     page_number = request.GET.get('page')
+    if page_number == None:
+        page_number=1
     #table = request.GET.get('table') or 'Students'
     table_choice='Students'
+    filter_table=''
+    filter_status=False
+
     if request.method == "GET":
         form = QueryTable(request.GET)
         if form.is_valid():
             table_choice = form.cleaned_data['table_choice']
             filter_table = form.cleaned_data['filter_table']
+            filter_status=True
     else:
+        filter_status=False
         form = QueryTable()
-        
 
     if sort_by:
         sort_by = toggle_sort(sort_by, app_context)
         data, table_headers = get_objects_by_table_and_sort(table_choice, sort_by)
+        app_context['last_data'], app_context['last_headers'] = data, table_headers
+    elif filter_status:
+        #print(table_choice)
+        data, table_headers = get_objects_by_table_and_filter(table_choice, filter_table)
         app_context['last_data'], app_context['last_headers'] = data, table_headers
     elif not page_number or not app_context['last_data']:
         data, table_headers = get_objects_by_table(table_choice)
@@ -72,7 +82,6 @@ def get_objects_by_table(table_name):
         'Not For Profits': (NotForProfits.objects.values_list(), NotForProfits._meta.get_fields())
     }[table_name]
 
-
 def get_objects_by_table_and_sort(table_name, sort_by):
     return {
         'Students': (Students.objects.order_by(sort_by).values_list(), Students._meta.get_fields()),
@@ -80,6 +89,91 @@ def get_objects_by_table_and_sort(table_name, sort_by):
         'Projects': (Projects.objects.order_by(sort_by).values_list(), Projects._meta.get_fields()),
         'Not For Profits': (NotForProfits.objects.order_by(sort_by).values_list(), NotForProfits._meta.get_fields())
     }[table_name]
+
+def get_objects_by_table_and_filter(table_name, filter_table):
+    index = filter_table.find(',')
+    category = filter_table[:index]
+    value = filter_table[(index+1):]
+    #print(category)
+    #print(value)
+    if table_name == 'Students':
+        if category == 'student_id':
+            try:
+                return (Students.objects.filter(student_id=int(value)).values_list(), Students._meta.get_fields())
+            except:   # wrong input - return the default filter (name), which will be empty in this case
+                return (Students.objects.filter(name=value).values_list(), Students._meta.get_fields())
+        elif category == 'name':
+            return (Students.objects.filter(name=value).values_list(), Students._meta.get_fields())
+        elif category == 'email':
+            return (Students.objects.filter(email=value).values_list(), Students._meta.get_fields())
+        elif category == 'discipline':
+            return (Students.objects.filter(discipline=value).values_list(), Students._meta.get_fields())
+        elif category == 'year':
+            return (Students.objects.filter(year=value).values_list(), Students._meta.get_fields())
+        elif category == 'phone':
+            try:
+                return (Students.objects.filter(phone=int(value)).values_list(), Students._meta.get_fields())
+            except:
+                return (Students.objects.filter(name=value).values_list(), Students._meta.get_fields())
+        elif category == 'interview_offer':
+            try:
+                return (Students.objects.filter(interview_offer=bool(value)).values_list(), Students._meta.get_fields())
+            except:
+                return (Students.objects.filter(name=value).values_list(), Students._meta.get_fields())
+        else:
+            return (Students.objects.filter(project_name=value).values_list(), Students._meta.get_fields())
+
+
+    elif table_name == 'Teams':
+        if category == 'team_name':
+            return (Teams.objects.filter(team_name=value).values_list(), Teams._meta.get_fields())
+        elif category == 'num_members':
+            try:
+                return (Teams.objects.filter(num_members=int(value)).values_list(), Teams._meta.get_fields())
+            except:   # wrong input - return the default filter (team_name), which will be empty in this case
+                return (Teams.objects.filter(team_name=value).values_list(), Teams._meta.get_fields())
+        elif category == 'avg_yos':
+            try:
+                return (Teams.objects.filter(avg_yos=float(value)).values_list(), Teams._meta.get_fields())
+            except:
+                return (Teams.objects.filter(team_name=value).values_list(), Teams._meta.get_fields())
+        else:
+            return (Teams.objects.filter(most_common_discipline=value).values_list(), Teams._meta.get_fields())
+
+    elif table_name == 'Projects':
+        if category == 'project_name':
+            return (Projects.objects.filter(project_name=value).values_list(), Projects._meta.get_fields())
+        elif category == 'client_name':
+            return (Projects.objects.filter(client_name=value).values_list(), Projects._meta.get_fields())
+        elif category == 'completion_rate':
+            try:
+                return (Projects.objects.filter(completion_rate=float(value)).values_list(), Projects._meta.get_fields())
+            except:
+                return (Projects.objects.filter(project_name=value).values_list(), Projects._meta.get_fields())
+        else:
+            return (Projects.objects.filter(project_type=value).values_list(), Projects._meta.get_fields())
+
+    else:
+        if category == 'nfp_name':
+            return (NotForProfits.objects.filter(nfp_name=value).values_list(), NotForProfits._meta.get_fields())
+        elif category == 'years_w_veep':
+            try:
+                return (NotForProfits.objects.filter(years_w_veep=float(value)).values_list(), NotForProfits._meta.get_fields())
+            except:
+                return (NotForProfits.objects.filter(nfp_name=value).values_list(), NotForProfits._meta.get_fields())
+        elif category == 'num_projects':
+            try:
+                return (NotForProfits.objects.filter(num_projects=int(value)).values_list(), NotForProfits._meta.get_fields())
+            except:
+                return (NotForProfits.objects.filter(nfp_name=value).values_list(), NotForProfits._meta.get_fields())
+        elif category == 'num_projects_completed':
+            try:
+                return (NotForProfits.objects.filter(num_projects_completed=int(value)).values_list(), NotForProfits._meta.get_fields())
+            except:
+                return (NotForProfits.objects.filter(nfp_name=value).values_list(), NotForProfits._meta.get_fields())
+        else:
+            return (NotForProfits.objects.filter(primary_email=value).values_list(), NotForProfits._meta.get_fields())
+
 
 
 def get_pagination_ranges(paginator, curr_page):
@@ -107,7 +201,3 @@ def toggle_sort(sort_by, context):
         context['last_sort'] = asc_sort
         context['ui_obj']['asc'] = sort_by
         return asc_sort
-
-def get_context_data(input):
-    return Students.objects.filter(input), Teams.objects.filter(input), Projects.objects.filter(input), NotForProfits.objects.filter(input)
-
