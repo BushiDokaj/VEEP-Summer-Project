@@ -13,7 +13,6 @@ class Students(models.Model):
     interview_offer = models.BooleanField(null=True, default=None)
     project_name = models.CharField(max_length=200)
 
-
 class Teams(models.Model):
     team_name = models.CharField(max_length=200)
     num_members = models.IntegerField()
