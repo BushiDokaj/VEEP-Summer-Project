@@ -21,6 +21,12 @@ CREDENTIALS_PATH = finders.find('credentials.json')
 
 
 def choose_import_type(import_type):
+    """
+    Given an import type <string>, return the corresponding function to be executed later.
+
+    :param import_type:
+    :return: import function
+    """
     return {
         constants.INDEPENDENT: independent_import,
         constants.INTERSECTION: intersection_import,
@@ -34,6 +40,14 @@ def independent_import():
 
 
 def intersection_import(new_data, existing_model, app_context):
+    """
+    Performs an intersection import as defined in the README, but does not save the data.
+
+    :param new_data: the data that is coming in from Google Sheets
+    :param existing_model: the existing table in our database
+    :param app_context:
+    :return: returns the new data, appended to the old data in the existing table.
+    """
     # Get the last n entries from our old table (to be first half of diff view)
     last_n = existing_model.objects.all().order_by('-id').values_list()[:50]
 
@@ -70,6 +84,13 @@ def intersection_import(new_data, existing_model, app_context):
 
 
 def copy_without_columns(arr, indices_set):
+    """
+    Copies the given data without the columns in the set of provided indices
+
+    :param arr: the data
+    :param indices_set: the indices to ignore
+    :return: the filtered data
+    """
     new_table = []
 
     for i in range(1, len(arr)):
@@ -91,6 +112,13 @@ def map_import():
 
 
 def get_data_from(url):
+    """
+    Gives unstructured data from Google Sheets
+
+    :param url: the url of the Sheet
+    :return: unstructured data
+    """
+
     gsheet_id = validate_url(_get_id_from_url(url))
     creds = validate_login()
 
@@ -117,6 +145,12 @@ def get_data_from(url):
 
 
 def validate_url(id_match):
+    """
+    Checks the given url against a templated ID
+
+    :param id_match:
+    :return: id
+    """
     if not id_match:
         raise KeyError('Not a google sheet url!')
     else:
